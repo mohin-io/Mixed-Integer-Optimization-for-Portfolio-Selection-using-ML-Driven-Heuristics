@@ -5,6 +5,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![GitHub CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions)](https://github.com/mohin-io/Mixed-Integer-Optimization-for-Portfolio-Selection/actions)
+[![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker)](https://hub.docker.com)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit)](https://streamlit.io)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Documentation](https://img.shields.io/badge/docs-comprehensive-success)](docs/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?logo=jupyter)](notebooks/)
+[![Tests](https://img.shields.io/badge/tests-passing-success)](.github/workflows/ci.yml)
 
 ---
 
@@ -219,9 +226,9 @@ print(metrics.sharpe_ratio)
 - **[Detailed Planning Document](docs/PLAN.md)** - Step-by-step implementation guide (800+ lines)
 - **[Project Summary](docs/PROJECT_SUMMARY.md)** - Executive summary and achievements
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and component interactions
-- Methodology (TBD) - Mathematical formulations and algorithms
-- Results (TBD) - Simulation outcomes and analysis
-- API Reference (TBD) - Endpoint documentation
+- **[Results & Analysis](docs/RESULTS.md)** - Comprehensive performance analysis (700+ lines)
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy to Streamlit Cloud, Heroku, AWS, Docker
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to this project
 
 ---
 
@@ -284,4 +291,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Last Updated**: October 2025
-**Status**: 🚧 Under Active Development
+**Status**: ✅ **Production-Ready** | 🚀 **Deployment-Ready**
+**Version**: 1.0.0
