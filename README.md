@@ -66,6 +66,28 @@ print(f"Optimal Weights: {weights}")
 streamlit run src/visualization/dashboard.py
 ```
 
+### Explore with Jupyter Notebook
+
+```bash
+jupyter notebook notebooks/portfolio_optimization_tutorial.ipynb
+```
+
+### Run Comprehensive Analysis
+
+```bash
+# Quick demo (5 assets)
+python scripts/run_analysis.py --quick
+
+# Full analysis (20 assets)
+python scripts/run_analysis.py --full
+
+# Compare all strategies
+python scripts/compare_strategies.py --assets 10
+
+# Benchmark performance
+python scripts/benchmark_performance.py --detailed
+```
+
 ---
 
 ## 📊 Key Results
