@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  portfolio-optimizer:
+    build: .
+    container_name: portfolio-mio-optimizer
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python main.py
+
+  # Future: API service
+  # api:
+  #   build: .
+  #   container_name: portfolio-api
+  #   ports:
+  #     - "8000:8000"
+  #   command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+
+  # Future: Dashboard service
+  # dashboard:
+  #   build: .
+  #   container_name: portfolio-dashboard
+  #   ports:
+  #     - "8501:8501"
+  #   command: streamlit run src/visualization/dashboard.py --server.port 8501
