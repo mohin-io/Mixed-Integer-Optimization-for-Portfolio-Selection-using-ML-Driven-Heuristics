@@ -183,7 +183,10 @@ print(metrics.sharpe_ratio)
 
 ## 📂 Documentation
 
-- [Detailed Planning Document](docs/PLAN.md) - Step-by-step implementation guide
+- **[Quickstart Guide](QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Detailed Planning Document](docs/PLAN.md)** - Step-by-step implementation guide (800+ lines)
+- **[Project Summary](docs/PROJECT_SUMMARY.md)** - Executive summary and achievements
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and component interactions
 - Methodology (TBD) - Mathematical formulations and algorithms
 - Results (TBD) - Simulation outcomes and analysis
 - API Reference (TBD) - Endpoint documentation
