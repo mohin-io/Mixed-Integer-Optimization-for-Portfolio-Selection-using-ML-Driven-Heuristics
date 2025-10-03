@@ -35,7 +35,7 @@ ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
+# *.ipynb  # Allow tutorial notebooks
 
 # Environment variables
 .env
