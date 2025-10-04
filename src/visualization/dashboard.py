@@ -300,9 +300,8 @@ def create_risk_return_bubble_chart(weights: pd.Series, annual_returns: pd.Serie
         textposition="top center",
         textfont=dict(size=10, color='white', family='Arial Black'),
         name='Selected Assets',
-        hovertemplate='<b>%{text}</b><br>Return: %{y:.2%}<br>Volatility: %{x:.2%}<br>Weight: ' +
-                      [f'{w:.2%}' for w in active_weights.values] +
-                      '<extra></extra>'
+        customdata=active_weights.values,
+        hovertemplate='<b>%{text}</b><br>Return: %{y:.2%}<br>Volatility: %{x:.2%}<br>Weight: %{customdata:.2%}<extra></extra>'
     ))
 
     fig.update_layout(
