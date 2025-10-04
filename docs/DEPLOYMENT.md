@@ -443,23 +443,9 @@ Use Cloudflare or AWS CloudFront for serving visualizations
 
 ---
 
-## 🔄 CI/CD Pipeline
-
-Already configured with GitHub Actions (`.github/workflows/ci.yml`)
-
-### Automatic Deployment
+## 🔄 Automatic Deployment
 
 **Streamlit Cloud**: Auto-deploys on push to master
-
-**Heroku**: Add to GitHub Actions
-```yaml
-- name: Deploy to Heroku
-  uses: akhileshns/heroku-deploy@v3.12.12
-  with:
-    heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-    heroku_app_name: "portfolio-optimizer-app"
-    heroku_email: "mohinhasin999@gmail.com"
-```
 
 ---
 

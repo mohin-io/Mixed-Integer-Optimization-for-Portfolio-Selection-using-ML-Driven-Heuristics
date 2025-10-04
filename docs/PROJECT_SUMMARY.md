@@ -296,7 +296,7 @@ a76bf58 chore: initialize project structure and planning documentation
 - **Software Engineering**: Clean architecture, testing, documentation
 - **Data Engineering**: ETL pipelines, caching, preprocessing
 - **Time Series Analysis**: ARIMA, GARCH, forecasting
-- **DevOps**: Docker, Git, CI/CD readiness
+- **DevOps**: Docker, Git
 
 ---
 

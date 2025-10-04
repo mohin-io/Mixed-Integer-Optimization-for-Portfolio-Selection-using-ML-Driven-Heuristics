@@ -13,13 +13,11 @@ Interactive dashboard featuring real-time portfolio optimization, ML-driven heur
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![GitHub CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions)](https://github.com/mohin-io/Mixed-Integer-Optimization-for-Portfolio-Selection/actions)
 [![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker)](https://hub.docker.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit)](https://streamlit.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-success)](docs/)
 [![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?logo=jupyter)](notebooks/)
-[![Tests](https://img.shields.io/badge/tests-passing-success)](.github/workflows/ci.yml)
 
 ---
 
@@ -383,7 +381,6 @@ docker-compose up --build
 - [x] Docker containerization
 - [x] Heroku deployment configuration
 - [x] Streamlit Cloud deployment ready
-- [x] CI/CD pipeline setup
 
 ### ✅ Phase 8: Testing & Documentation (Complete)
 - [x] 46+ unit and integration tests (100% pass rate)
