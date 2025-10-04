@@ -21,9 +21,10 @@ statsmodels>=0.14.0
 arch>=6.2.0
 # pmdarima>=2.0.3  # Removed: incompatible with Python 3.13, use statsmodels ARIMA instead
 
-# Deep Learning (Optional - for LSTM forecasting)
-tensorflow>=2.13.0  # Optional: pip install tensorflow for LSTM models
-# torch>=2.0.0  # Alternative: PyTorch for neural networks
+# Deep Learning (Optional - for advanced forecasting)
+tensorflow>=2.13.0  # Optional: for LSTM models
+torch>=2.0.0  # Optional: for Transformers, RL agents
+# Note: Install either tensorflow or torch (or both) based on your needs
 
 # Visualization
 matplotlib>=3.7.0
@@ -56,3 +57,7 @@ mypy>=1.4.0
 tqdm>=4.65.0
 joblib>=1.3.0
 python-dateutil>=2.8.2
+
+# Live Trading & Real-Time Data (Optional)
+alpaca-trade-api>=3.0.0  # Optional: for broker integration
+websockets>=11.0.0  # Optional: for real-time data streams
