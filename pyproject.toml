@@ -33,6 +33,31 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+ignore_missing_imports = true
+check_untyped_defs = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+exclude = ["tests/", "build/", "dist/"]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503", "E501"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv", "*.egg-info"]
+per-file-ignores = [
+    "__init__.py:F401"
+]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+known_first_party = ["src"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = ["B101", "B601"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

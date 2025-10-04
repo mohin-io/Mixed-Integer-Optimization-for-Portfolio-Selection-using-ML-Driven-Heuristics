@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+from typing import Tuple, Optional, Dict, Any
 
 # Page configuration
 st.set_page_config(
@@ -49,8 +50,18 @@ st.markdown("""
 
 
 @st.cache_data
-def generate_synthetic_data(n_assets, n_days, seed):
-    """Generate synthetic market data."""
+def generate_synthetic_data(n_assets: int, n_days: int, seed: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Generate synthetic market data using factor model.
+
+    Args:
+        n_assets: Number of assets to generate
+        n_days: Number of days of historical data
+        seed: Random seed for reproducibility
+
+    Returns:
+        Tuple of (prices DataFrame, returns DataFrame)
+    """
     np.random.seed(seed)
     tickers = [f'ASSET_{i+1}' for i in range(n_assets)]
 
@@ -70,8 +81,24 @@ def generate_synthetic_data(n_assets, n_days, seed):
     return prices, returns
 
 
-def optimize_portfolio(returns, strategy, max_assets=None, risk_aversion=2.5):
-    """Optimize portfolio using specified strategy."""
+def optimize_portfolio(
+    returns: pd.DataFrame,
+    strategy: str,
+    max_assets: Optional[int] = None,
+    risk_aversion: float = 2.5
+) -> Tuple[pd.Series, pd.Series, pd.DataFrame]:
+    """
+    Optimize portfolio using specified strategy.
+
+    Args:
+        returns: Historical returns DataFrame
+        strategy: Strategy name ('Equal Weight', 'Max Sharpe', 'Min Variance', 'Concentrated')
+        max_assets: Maximum number of assets for concentrated strategy
+        risk_aversion: Risk aversion parameter (higher = more conservative)
+
+    Returns:
+        Tuple of (weights Series, annual returns Series, covariance matrix DataFrame)
+    """
     n_assets = len(returns.columns)
     annual_returns = returns.mean() * 252
     annual_volatility = returns.std() * np.sqrt(252)
@@ -138,8 +165,22 @@ def optimize_portfolio(returns, strategy, max_assets=None, risk_aversion=2.5):
     return pd.Series(weights, index=returns.columns), annual_returns, cov_matrix
 
 
-def evaluate_portfolio(weights, annual_returns, cov_matrix):
-    """Evaluate portfolio metrics."""
+def evaluate_portfolio(
+    weights: pd.Series,
+    annual_returns: pd.Series,
+    cov_matrix: pd.DataFrame
+) -> Dict[str, Any]:
+    """
+    Evaluate portfolio performance metrics.
+
+    Args:
+        weights: Portfolio weights
+        annual_returns: Annual returns for each asset
+        cov_matrix: Covariance matrix of returns
+
+    Returns:
+        Dictionary containing portfolio metrics (return, volatility, sharpe, n_assets)
+    """
     port_return = (weights * annual_returns).sum()
     port_vol = np.sqrt(weights.values @ cov_matrix.values @ weights.values)
     sharpe = port_return / port_vol if port_vol > 0 else 0
@@ -154,7 +195,7 @@ def evaluate_portfolio(weights, annual_returns, cov_matrix):
 
 
 # Main app
-def main():
+def main() -> None:
     # Header
     st.markdown('<div class="main-header">📊 Portfolio Optimization Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Interactive Mixed-Integer Optimization with ML-Driven Heuristics</div>', unsafe_allow_html=True)
