@@ -10,9 +10,11 @@ Run with:
 import streamlit as st
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from datetime import datetime, timedelta
+import time
 from typing import Tuple, Optional, Dict, Any
 
 # Page configuration
@@ -23,15 +25,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS with modern design
 st.markdown("""
 <style>
     .main-header {
         font-size: 3rem;
         font-weight: bold;
-        color: #1f77b4;
+        background: linear-gradient(90deg, #1f77b4 0%, #2ca02c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
         padding: 1rem 0;
+        animation: fadeIn 1s ease-in;
     }
     .sub-header {
         font-size: 1.5rem;
@@ -40,10 +45,34 @@ st.markdown("""
         padding-bottom: 2rem;
     }
     .metric-box {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        color: white;
         text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    .metric-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #f0f2f6;
+        border-radius: 8px 8px 0 0;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, #1f77b4 0%, #2ca02c 100%);
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -65,7 +94,7 @@ def generate_synthetic_data(n_assets: int, n_days: int, seed: int) -> Tuple[pd.D
     np.random.seed(seed)
     tickers = [f'ASSET_{i+1}' for i in range(n_assets)]
 
-    # Factor model
+    # Factor model with realistic parameters
     n_factors = 3
     factor_loadings = np.random.randn(n_assets, n_factors) * 0.3
     factor_returns = np.random.randn(n_days, n_factors) * 0.01
@@ -194,11 +223,357 @@ def evaluate_portfolio(
     }
 
 
+def calculate_efficient_frontier(returns: pd.DataFrame, n_portfolios: int = 100) -> pd.DataFrame:
+    """Calculate efficient frontier portfolios."""
+    annual_returns = returns.mean() * 252
+    cov_matrix = returns.cov() * 252
+    n_assets = len(returns.columns)
+
+    results = []
+    for _ in range(n_portfolios):
+        weights = np.random.dirichlet(np.ones(n_assets))
+        port_return = (weights * annual_returns.values).sum()
+        port_vol = np.sqrt(weights @ cov_matrix.values @ weights)
+        sharpe = port_return / port_vol if port_vol > 0 else 0
+
+        results.append({
+            'return': port_return,
+            'volatility': port_vol,
+            'sharpe': sharpe
+        })
+
+    return pd.DataFrame(results)
+
+
+def create_3d_allocation_chart(weights: pd.Series, annual_returns: pd.Series, annual_vol: pd.Series):
+    """Create interactive 3D portfolio allocation visualization."""
+    active_weights = weights[weights > 1e-4]
+
+    fig = go.Figure(data=[go.Scatter3d(
+        x=annual_vol[active_weights.index].values,
+        y=annual_returns[active_weights.index].values,
+        z=active_weights.values,
+        mode='markers+text',
+        marker=dict(
+            size=active_weights.values * 100,
+            color=active_weights.values,
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Weight"),
+            line=dict(width=2, color='white')
+        ),
+        text=active_weights.index,
+        textposition="top center",
+        textfont=dict(size=10, color='white'),
+        hovertemplate='<b>%{text}</b><br>' +
+                      'Volatility: %{x:.2%}<br>' +
+                      'Return: %{y:.2%}<br>' +
+                      'Weight: %{z:.2%}<br>' +
+                      '<extra></extra>'
+    )])
+
+    fig.update_layout(
+        title=dict(
+            text="3D Portfolio Allocation Space",
+            font=dict(size=20, color='#1f77b4'),
+            x=0.5,
+            xanchor='center'
+        ),
+        scene=dict(
+            xaxis=dict(title='Volatility', backgroundcolor='rgba(240,240,240,0.9)'),
+            yaxis=dict(title='Expected Return', backgroundcolor='rgba(240,240,240,0.9)'),
+            zaxis=dict(title='Weight', backgroundcolor='rgba(240,240,240,0.9)'),
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.3))
+        ),
+        height=600,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+    )
+
+    return fig
+
+
+def create_animated_performance_chart(returns: pd.DataFrame, weights: pd.Series):
+    """Create animated portfolio performance visualization."""
+    portfolio_returns = (returns * weights.values).sum(axis=1)
+    cumulative_portfolio = (1 + portfolio_returns).cumprod()
+
+    # Create frames for animation
+    frames = []
+    n_frames = min(50, len(cumulative_portfolio))
+    step_size = len(cumulative_portfolio) // n_frames
+
+    for i in range(1, n_frames + 1):
+        idx = min(i * step_size, len(cumulative_portfolio))
+        frames.append(go.Frame(
+            data=[go.Scatter(
+                x=cumulative_portfolio.index[:idx],
+                y=cumulative_portfolio.values[:idx],
+                mode='lines',
+                line=dict(color='#2ca02c', width=3),
+                fill='tozeroy',
+                fillcolor='rgba(44,160,44,0.2)'
+            )],
+            name=str(i)
+        ))
+
+    fig = go.Figure(
+        data=[go.Scatter(
+            x=cumulative_portfolio.index[:step_size],
+            y=cumulative_portfolio.values[:step_size],
+            mode='lines',
+            line=dict(color='#2ca02c', width=3),
+            fill='tozeroy',
+            fillcolor='rgba(44,160,44,0.2)'
+        )],
+        frames=frames
+    )
+
+    fig.update_layout(
+        title=dict(
+            text="Animated Portfolio Growth",
+            font=dict(size=20, color='#1f77b4'),
+            x=0.5,
+            xanchor='center'
+        ),
+        xaxis=dict(title='Date', gridcolor='rgba(200,200,200,0.3)'),
+        yaxis=dict(title='Cumulative Return', gridcolor='rgba(200,200,200,0.3)'),
+        hovermode='x unified',
+        height=500,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(250,250,250,0.9)',
+        updatemenus=[{
+            'type': 'buttons',
+            'showactive': False,
+            'buttons': [
+                {'label': 'Play', 'method': 'animate', 'args': [None, {'frame': {'duration': 50, 'redraw': True}}]},
+                {'label': 'Pause', 'method': 'animate', 'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate'}]}
+            ],
+            'x': 0.1,
+            'y': 1.15
+        }]
+    )
+
+    return fig
+
+
+def create_gauge_chart(value: float, title: str, max_value: float = 1.0):
+    """Create a beautiful gauge chart for metrics."""
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number+delta",
+        value=value * 100 if max_value == 1.0 else value,
+        title={'text': title, 'font': {'size': 18}},
+        delta={'reference': 10 if 'Return' in title else 0.5},
+        gauge={
+            'axis': {'range': [None, max_value * 100 if max_value == 1.0 else max_value]},
+            'bar': {'color': "#2ca02c"},
+            'steps': [
+                {'range': [0, max_value * 33.33 if max_value == 1.0 else max_value/3], 'color': "lightgray"},
+                {'range': [max_value * 33.33 if max_value == 1.0 else max_value/3, max_value * 66.66 if max_value == 1.0 else 2*max_value/3], 'color': "gray"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': max_value * 90 if max_value == 1.0 else 0.9 * max_value
+            }
+        }
+    ))
+
+    fig.update_layout(
+        height=250,
+        margin=dict(l=20, r=20, t=50, b=20),
+        paper_bgcolor='rgba(0,0,0,0)',
+        font={'color': "#1f77b4", 'family': "Arial"}
+    )
+
+    return fig
+
+
+def create_interactive_weights_chart(weights: pd.Series, strategy: str):
+    """Create interactive sunburst or treemap for weights."""
+    active_weights = weights[weights > 1e-4].sort_values(ascending=False)
+
+    # Create hierarchical data
+    categories = []
+    for i, (asset, weight) in enumerate(active_weights.items()):
+        if weight > 0.1:
+            categories.append('Large (>10%)')
+        elif weight > 0.05:
+            categories.append('Medium (5-10%)')
+        else:
+            categories.append('Small (<5%)')
+
+    df = pd.DataFrame({
+        'Asset': active_weights.index,
+        'Weight': active_weights.values,
+        'Category': categories
+    })
+
+    fig = px.sunburst(
+        df,
+        path=['Category', 'Asset'],
+        values='Weight',
+        color='Weight',
+        color_continuous_scale='RdYlGn',
+        title=f"{strategy} Portfolio Allocation"
+    )
+
+    fig.update_layout(
+        height=600,
+        title=dict(
+            font=dict(size=20, color='#1f77b4'),
+            x=0.5,
+            xanchor='center'
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+    )
+
+    return fig
+
+
+def create_correlation_network(returns: pd.DataFrame, threshold: float = 0.5):
+    """Create interactive correlation network graph."""
+    corr_matrix = returns.corr()
+
+    # Create network edges
+    edges = []
+    for i in range(len(corr_matrix.columns)):
+        for j in range(i+1, len(corr_matrix.columns)):
+            if abs(corr_matrix.iloc[i, j]) > threshold:
+                edges.append({
+                    'source': corr_matrix.columns[i],
+                    'target': corr_matrix.columns[j],
+                    'weight': corr_matrix.iloc[i, j]
+                })
+
+    # Create positions for nodes (circular layout)
+    n_nodes = len(corr_matrix.columns)
+    angles = np.linspace(0, 2*np.pi, n_nodes, endpoint=False)
+    x_pos = np.cos(angles)
+    y_pos = np.sin(angles)
+
+    # Create edge traces
+    edge_traces = []
+    for edge in edges:
+        i = list(corr_matrix.columns).index(edge['source'])
+        j = list(corr_matrix.columns).index(edge['target'])
+
+        color = 'red' if edge['weight'] < 0 else 'green'
+        width = abs(edge['weight']) * 5
+
+        edge_traces.append(go.Scatter(
+            x=[x_pos[i], x_pos[j], None],
+            y=[y_pos[i], y_pos[j], None],
+            mode='lines',
+            line=dict(width=width, color=color),
+            opacity=0.5,
+            hoverinfo='none',
+            showlegend=False
+        ))
+
+    # Create node trace
+    node_trace = go.Scatter(
+        x=x_pos,
+        y=y_pos,
+        mode='markers+text',
+        marker=dict(
+            size=30,
+            color='#1f77b4',
+            line=dict(width=2, color='white')
+        ),
+        text=list(corr_matrix.columns),
+        textposition="top center",
+        textfont=dict(size=12, color='white'),
+        hovertemplate='<b>%{text}</b><extra></extra>',
+        showlegend=False
+    )
+
+    fig = go.Figure(data=edge_traces + [node_trace])
+
+    fig.update_layout(
+        title=dict(
+            text=f"Correlation Network (|r| > {threshold})",
+            font=dict(size=20, color='#1f77b4'),
+            x=0.5,
+            xanchor='center'
+        ),
+        showlegend=False,
+        hovermode='closest',
+        height=600,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(250,250,250,0.9)',
+    )
+
+    return fig
+
+
+def create_efficient_frontier_chart(returns: pd.DataFrame, current_portfolio: Dict):
+    """Create interactive efficient frontier with current portfolio."""
+    frontier_data = calculate_efficient_frontier(returns, 500)
+
+    fig = go.Figure()
+
+    # Scatter plot for efficient frontier
+    fig.add_trace(go.Scatter(
+        x=frontier_data['volatility'],
+        y=frontier_data['return'],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color=frontier_data['sharpe'],
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Sharpe Ratio"),
+            line=dict(width=1, color='white')
+        ),
+        text=[f"Sharpe: {s:.2f}" for s in frontier_data['sharpe']],
+        hovertemplate='Return: %{y:.2%}<br>Volatility: %{x:.2%}<br>%{text}<extra></extra>',
+        name='Random Portfolios'
+    ))
+
+    # Add current portfolio
+    fig.add_trace(go.Scatter(
+        x=[current_portfolio['volatility']],
+        y=[current_portfolio['return']],
+        mode='markers+text',
+        marker=dict(
+            size=20,
+            color='red',
+            symbol='star',
+            line=dict(width=2, color='white')
+        ),
+        text=['Current'],
+        textposition='top center',
+        textfont=dict(size=14, color='red'),
+        hovertemplate='<b>Current Portfolio</b><br>Return: %{y:.2%}<br>Volatility: %{x:.2%}<extra></extra>',
+        name='Current Portfolio'
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text="Efficient Frontier Explorer",
+            font=dict(size=20, color='#1f77b4'),
+            x=0.5,
+            xanchor='center'
+        ),
+        xaxis=dict(title='Annual Volatility (%)', gridcolor='rgba(200,200,200,0.3)', tickformat='.1%'),
+        yaxis=dict(title='Expected Annual Return (%)', gridcolor='rgba(200,200,200,0.3)', tickformat='.1%'),
+        hovermode='closest',
+        height=600,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(250,250,250,0.9)',
+    )
+
+    return fig
+
+
 # Main app
 def main() -> None:
-    # Header
+    # Header with animation
     st.markdown('<div class="main-header">📊 Portfolio Optimization Dashboard</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Interactive Mixed-Integer Optimization with ML-Driven Heuristics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Interactive Mixed-Integer Optimization with Real-Time Visualizations</div>', unsafe_allow_html=True)
 
     # Sidebar
     st.sidebar.header("⚙️ Configuration")
@@ -241,6 +616,7 @@ def main() -> None:
             st.session_state['metrics'] = metrics
             st.session_state['annual_returns'] = annual_returns
             st.session_state['cov_matrix'] = cov_matrix
+            st.session_state['strategy'] = strategy
 
         st.sidebar.success("✅ Optimization Complete!")
 
@@ -250,128 +626,101 @@ def main() -> None:
         metrics = st.session_state['metrics']
         prices = st.session_state['prices']
         returns = st.session_state['returns']
+        annual_returns = st.session_state['annual_returns']
+        strategy = st.session_state.get('strategy', 'Unknown')
 
-        # Metrics
-        st.header("📈 Portfolio Metrics")
+        # Metrics with gauges
+        st.header("📈 Portfolio Metrics Dashboard")
+
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            st.metric(
-                label="Expected Annual Return",
-                value=f"{metrics['return']:.2%}",
-                delta=None
-            )
+            fig1 = create_gauge_chart(metrics['return'], "Expected Return (%)", 0.5)
+            st.plotly_chart(fig1, use_container_width=True)
 
         with col2:
-            st.metric(
-                label="Annual Volatility",
-                value=f"{metrics['volatility']:.2%}",
-                delta=None
-            )
+            fig2 = create_gauge_chart(metrics['volatility'], "Volatility (%)", 0.5)
+            st.plotly_chart(fig2, use_container_width=True)
 
         with col3:
-            st.metric(
-                label="Sharpe Ratio",
-                value=f"{metrics['sharpe']:.3f}",
-                delta=None
-            )
+            fig3 = create_gauge_chart(metrics['sharpe'], "Sharpe Ratio", 3.0)
+            st.plotly_chart(fig3, use_container_width=True)
 
         with col4:
-            st.metric(
-                label="Number of Assets",
-                value=f"{int(metrics['n_assets'])}",
-                delta=None
-            )
+            fig4 = create_gauge_chart(metrics['n_assets'], "Active Assets", n_assets)
+            st.plotly_chart(fig4, use_container_width=True)
 
-        # Tabs
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Weights", "📉 Prices", "🔗 Correlation", "📈 Performance"])
+        # Tabs with enhanced visualizations
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "🎯 Allocation",
+            "📊 Efficient Frontier",
+            "🌐 Correlation Network",
+            "📈 Performance",
+            "🔮 3D Analysis"
+        ])
 
         with tab1:
-            st.subheader("Portfolio Weights")
+            st.subheader("Interactive Portfolio Allocation")
+            fig_weights = create_interactive_weights_chart(weights, strategy)
+            st.plotly_chart(fig_weights, use_container_width=True)
 
-            col1, col2 = st.columns([2, 1])
-
-            with col1:
-                # Bar chart
-                fig, ax = plt.subplots(figsize=(10, 6))
-                active_weights = weights[weights > 1e-4].sort_values(ascending=True)
-                colors = plt.cm.viridis(np.linspace(0.3, 0.9, len(active_weights)))
-                ax.barh(range(len(active_weights)), active_weights.values, color=colors, edgecolor='black')
-                ax.set_yticks(range(len(active_weights)))
-                ax.set_yticklabels(active_weights.index)
-                ax.set_xlabel('Weight', fontsize=12, fontweight='bold')
-                ax.set_title(f'{strategy} Portfolio Weights', fontsize=14, fontweight='bold')
-                ax.grid(True, alpha=0.3, axis='x')
-
-                for i, v in enumerate(active_weights.values):
-                    ax.text(v + 0.005, i, f'{v:.1%}', va='center', fontsize=10)
-
-                st.pyplot(fig)
-
-            with col2:
-                # Weights table
-                st.dataframe(
-                    weights[weights > 1e-4].sort_values(ascending=False).to_frame('Weight').style.format("{:.2%}"),
-                    height=400
-                )
+            # Weights table
+            st.subheader("Detailed Weights")
+            active_weights = weights[weights > 1e-4].sort_values(ascending=False)
+            weights_df = pd.DataFrame({
+                'Asset': active_weights.index,
+                'Weight': active_weights.values,
+                'Weight (%)': (active_weights.values * 100).round(2)
+            })
+            st.dataframe(weights_df, use_container_width=True, hide_index=True)
 
         with tab2:
-            st.subheader("Asset Prices Over Time")
+            st.subheader("Efficient Frontier Explorer")
+            fig_frontier = create_efficient_frontier_chart(returns, metrics)
+            st.plotly_chart(fig_frontier, use_container_width=True)
 
-            fig, ax = plt.subplots(figsize=(12, 6))
-            for col in prices.columns[:5]:  # Show top 5
-                ax.plot(prices.index, prices[col], label=col, linewidth=2, alpha=0.7)
-
-            ax.set_xlabel('Date', fontsize=12)
-            ax.set_ylabel('Price', fontsize=12)
-            ax.set_title('Price Evolution', fontsize=14, fontweight='bold')
-            ax.legend(loc='upper left', fontsize=10)
-            ax.grid(True, alpha=0.3)
-
-            st.pyplot(fig)
+            st.info("🎯 The red star shows your current portfolio. Points colored by Sharpe ratio (green = better).")
 
         with tab3:
-            st.subheader("Return Correlation Matrix")
+            st.subheader("Asset Correlation Network")
+            threshold = st.slider("Correlation Threshold", 0.0, 1.0, 0.5, 0.1)
+            fig_network = create_correlation_network(returns, threshold)
+            st.plotly_chart(fig_network, use_container_width=True)
 
-            fig, ax = plt.subplots(figsize=(10, 8))
-            corr_matrix = returns.corr()
-            sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='coolwarm',
-                       center=0, square=True, linewidths=0.5, ax=ax,
-                       cbar_kws={'label': 'Correlation'})
-            ax.set_title('Asset Correlation Heatmap', fontsize=14, fontweight='bold')
-
-            st.pyplot(fig)
+            st.info("🔗 Green lines show positive correlations, red lines show negative correlations. Line thickness indicates strength.")
 
         with tab4:
-            st.subheader("Portfolio Performance")
+            st.subheader("Animated Portfolio Performance")
+            fig_perf = create_animated_performance_chart(returns, weights)
+            st.plotly_chart(fig_perf, use_container_width=True)
 
-            # Calculate portfolio returns
+            # Performance metrics
             portfolio_returns = (returns * weights.values).sum(axis=1)
             cumulative_portfolio = (1 + portfolio_returns).cumprod()
 
-            # Benchmark (equal weight)
-            equal_weight = pd.Series(1.0 / len(returns.columns), index=returns.columns)
-            benchmark_returns = (returns * equal_weight.values).sum(axis=1)
-            cumulative_benchmark = (1 + benchmark_returns).cumprod()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                total_return = (cumulative_portfolio.iloc[-1] - 1) * 100
+                st.metric("Total Return", f"{total_return:.2f}%")
+            with col2:
+                max_dd = ((cumulative_portfolio / cumulative_portfolio.cummax()) - 1).min() * 100
+                st.metric("Max Drawdown", f"{max_dd:.2f}%")
+            with col3:
+                daily_sharpe = portfolio_returns.mean() / portfolio_returns.std() * np.sqrt(252)
+                st.metric("Realized Sharpe", f"{daily_sharpe:.3f}")
 
-            fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(cumulative_portfolio.index, cumulative_portfolio.values,
-                   label=f'{strategy} Portfolio', linewidth=2.5, color='green')
-            ax.plot(cumulative_benchmark.index, cumulative_benchmark.values,
-                   label='Equal Weight Benchmark', linewidth=2, linestyle='--', color='gray')
+        with tab5:
+            st.subheader("3D Portfolio Analysis")
+            annual_vol = returns.std() * np.sqrt(252)
+            fig_3d = create_3d_allocation_chart(weights, annual_returns, annual_vol)
+            st.plotly_chart(fig_3d, use_container_width=True)
 
-            ax.set_xlabel('Date', fontsize=12)
-            ax.set_ylabel('Cumulative Return', fontsize=12)
-            ax.set_title('Cumulative Performance', fontsize=14, fontweight='bold')
-            ax.legend(fontsize=11)
-            ax.grid(True, alpha=0.3)
-
-            st.pyplot(fig)
+            st.info("🎲 Bubble size represents portfolio weight. Rotate the chart by dragging!")
 
     else:
         st.info("👈 Configure parameters in the sidebar and click 'Optimize Portfolio' to begin!")
 
-        # Show example
+        # Show example with interactive demo
         st.header("📚 How It Works")
 
         col1, col2 = st.columns(2)
@@ -390,12 +739,25 @@ def main() -> None:
             st.markdown("""
             ### 📊 Features
 
-            - Interactive parameter tuning
-            - Real-time optimization
-            - Multiple visualizations
-            - Performance comparison
-            - Exportable results
+            - 🎨 Interactive 3D visualizations
+            - 📈 Real-time animated charts
+            - 🌐 Correlation network graphs
+            - ⚡ Efficient frontier explorer
+            - 📊 Dynamic gauge metrics
             """)
+
+        # Demo visualization
+        st.header("🎬 Preview: Sample Visualization")
+        demo_data = pd.DataFrame({
+            'x': np.random.randn(100),
+            'y': np.random.randn(100),
+        })
+        fig_demo = px.scatter(demo_data, x='x', y='y',
+                             title="Interactive Scatter Plot (Try hovering!)",
+                             color=demo_data['x'] + demo_data['y'],
+                             color_continuous_scale='Viridis')
+        fig_demo.update_layout(height=400)
+        st.plotly_chart(fig_demo, use_container_width=True)
 
 
 if __name__ == '__main__':
