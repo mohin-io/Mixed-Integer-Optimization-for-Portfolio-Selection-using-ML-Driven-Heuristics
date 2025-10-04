@@ -53,8 +53,24 @@ joblib>=1.3.0
 # flake8>=6.0.0
 # mypy>=1.4.0
 
-# Live Trading & Real-Time - incompatible versions, use compatible websockets
-# Fixed: alpaca-trade-api requires websockets<11
-# alpaca-trade-api>=3.0.0
-# websockets>=9.0,<11  # Compatible with alpaca-trade-api
-# prometheus-client>=0.17.0
+# Live Trading & Real-Time
+ib_insync>=0.9.86            # Interactive Brokers API
+prometheus-client>=0.17.0    # Monitoring metrics
+
+# Alerts & Notifications
+twilio>=8.10.0              # SMS notifications
+python-dotenv>=1.0.0        # Environment variable management
+
+# Database & ORM
+sqlalchemy>=2.0.0           # SQL toolkit and ORM
+alembic>=1.12.0             # Database migrations
+psycopg2-binary>=2.9.9      # PostgreSQL adapter
+
+# API & Web Framework (for future REST API)
+# fastapi>=0.100.0
+# uvicorn>=0.23.0
+# pydantic>=2.0.0
+
+# Task Queue (for future background jobs)
+# celery>=5.3.0
+# redis>=4.6.0
