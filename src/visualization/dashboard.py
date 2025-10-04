@@ -15,7 +15,18 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import time
+import logging
 from typing import Tuple, Optional, Dict, Any, List
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(
@@ -78,6 +89,50 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+def validate_inputs(n_assets: int, n_days: int, seed: int, risk_aversion: float, max_assets: int) -> bool:
+    """
+    Validate user inputs for portfolio optimization.
+
+    Args:
+        n_assets: Number of assets
+        n_days: Number of days
+        seed: Random seed
+        risk_aversion: Risk aversion parameter
+        max_assets: Maximum number of assets in portfolio
+
+    Returns:
+        True if all inputs are valid
+
+    Raises:
+        ValueError: If any input is invalid
+    """
+    try:
+        if n_assets <= 0:
+            raise ValueError("Number of assets must be greater than 0")
+        if n_assets > 100:
+            raise ValueError("Number of assets must be 100 or less (performance limitation)")
+        if n_days <= 0:
+            raise ValueError("Number of days must be greater than 0")
+        if n_days < 30:
+            raise ValueError("Number of days must be at least 30 for meaningful analysis")
+        if seed < 0:
+            raise ValueError("Random seed must be non-negative")
+        if risk_aversion <= 0:
+            raise ValueError("Risk aversion must be greater than 0")
+        if max_assets <= 0:
+            raise ValueError("Maximum assets must be greater than 0")
+        if max_assets > n_assets:
+            raise ValueError(f"Maximum assets ({max_assets}) cannot exceed total assets ({n_assets})")
+
+        logger.info(f"Input validation passed: n_assets={n_assets}, n_days={n_days}, seed={seed}")
+        return True
+
+    except ValueError as e:
+        logger.error(f"Input validation failed: {str(e)}")
+        st.error(f"❌ Invalid Input: {str(e)}")
+        return False
+
+
 @st.cache_data
 def generate_synthetic_data(n_assets: int, n_days: int, seed: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -90,24 +145,40 @@ def generate_synthetic_data(n_assets: int, n_days: int, seed: int) -> Tuple[pd.D
 
     Returns:
         Tuple of (prices DataFrame, returns DataFrame)
+
+    Raises:
+        ValueError: If inputs are invalid
+        RuntimeError: If data generation fails
     """
-    np.random.seed(seed)
-    tickers = [f'ASSET_{i+1}' for i in range(n_assets)]
+    try:
+        logger.info(f"Generating synthetic data: n_assets={n_assets}, n_days={n_days}, seed={seed}")
 
-    # Factor model with realistic parameters
-    n_factors = 3
-    factor_loadings = np.random.randn(n_assets, n_factors) * 0.3
-    factor_returns = np.random.randn(n_days, n_factors) * 0.01
-    idiosyncratic = np.random.randn(n_days, n_assets) * 0.005
+        np.random.seed(seed)
+        tickers = [f'ASSET_{i+1}' for i in range(n_assets)]
 
-    drift = np.random.uniform(0.0001, 0.0005, n_assets)
-    returns_matrix = factor_returns @ factor_loadings.T + idiosyncratic + drift
+        # Factor model with realistic parameters
+        n_factors = 3
+        factor_loadings = np.random.randn(n_assets, n_factors) * 0.3
+        factor_returns = np.random.randn(n_days, n_factors) * 0.01
+    except Exception as e:
+        logger.error(f"Failed to generate synthetic data: {str(e)}")
+        raise RuntimeError(f"Data generation failed: {str(e)}")
 
-    dates = pd.date_range('2020-01-01', periods=n_days, freq='D')
-    returns = pd.DataFrame(returns_matrix, index=dates, columns=tickers)
-    prices = (1 + returns).cumprod() * 100
+    try:
+        idiosyncratic = np.random.randn(n_days, n_assets) * 0.005
+        drift = np.random.uniform(0.0001, 0.0005, n_assets)
+        returns_matrix = factor_returns @ factor_loadings.T + idiosyncratic + drift
 
-    return prices, returns
+        dates = pd.date_range('2020-01-01', periods=n_days, freq='D')
+        returns = pd.DataFrame(returns_matrix, index=dates, columns=tickers)
+        prices = (1 + returns).cumprod() * 100
+
+        logger.info(f"Successfully generated data with shape: prices={prices.shape}, returns={returns.shape}")
+        return prices, returns
+
+    except Exception as e:
+        logger.error(f"Failed to construct price/return DataFrames: {str(e)}")
+        raise RuntimeError(f"Data construction failed: {str(e)}")
 
 
 def optimize_portfolio(
@@ -127,71 +198,111 @@ def optimize_portfolio(
 
     Returns:
         Tuple of (weights Series, annual returns Series, covariance matrix DataFrame)
+
+    Raises:
+        ValueError: If returns is empty or strategy is invalid
+        RuntimeError: If optimization fails
     """
-    n_assets = len(returns.columns)
-    annual_returns = returns.mean() * 252
-    annual_volatility = returns.std() * np.sqrt(252)
-    cov_matrix = returns.cov() * 252
+    try:
+        # Input validation
+        if returns.empty:
+            raise ValueError("Returns DataFrame is empty")
+        if returns.isnull().any().any():
+            logger.warning("Returns contain NaN values, filling with 0")
+            returns = returns.fillna(0)
 
-    if strategy == 'Equal Weight':
-        weights = np.ones(n_assets) / n_assets
+        n_assets = len(returns.columns)
+        logger.info(f"Optimizing portfolio: strategy={strategy}, n_assets={n_assets}, max_assets={max_assets}")
 
-    elif strategy == 'Max Sharpe':
-        best_sharpe = -np.inf
-        best_weights = None
+        annual_returns = returns.mean() * 252
+        annual_volatility = returns.std() * np.sqrt(252)
+        cov_matrix = returns.cov() * 252
 
-        for _ in range(10000):
-            w = np.random.dirichlet(np.ones(n_assets))
-            port_return = (w * annual_returns.values).sum()
-            port_vol = np.sqrt(w @ cov_matrix.values @ w)
-            sharpe = port_return / port_vol if port_vol > 0 else 0
+        # Check for singular covariance matrix
+        if np.linalg.cond(cov_matrix.values) > 1e10:
+            logger.warning("Covariance matrix is near-singular, adding regularization")
+            cov_matrix += np.eye(n_assets) * 1e-6
 
-            if sharpe > best_sharpe:
-                best_sharpe = sharpe
-                best_weights = w
+        if strategy == 'Equal Weight':
+            weights = np.ones(n_assets) / n_assets
 
-        weights = best_weights
+        elif strategy == 'Max Sharpe':
+            best_sharpe = -np.inf
+            best_weights = None
 
-    elif strategy == 'Min Variance':
-        min_var = np.inf
-        min_var_weights = None
+            for _ in range(10000):
+                w = np.random.dirichlet(np.ones(n_assets))
+                port_return = (w * annual_returns.values).sum()
+                port_vol = np.sqrt(w @ cov_matrix.values @ w)
+                sharpe = port_return / port_vol if port_vol > 0 else 0
 
-        for _ in range(10000):
-            w = np.random.dirichlet(np.ones(n_assets))
-            port_var = w @ cov_matrix.values @ w
+                if sharpe > best_sharpe:
+                    best_sharpe = sharpe
+                    best_weights = w
 
-            if port_var < min_var:
-                min_var = port_var
-                min_var_weights = w
+            if best_weights is None:
+                raise RuntimeError("Max Sharpe optimization failed to find solution")
+            weights = best_weights
 
-        weights = min_var_weights
+        elif strategy == 'Min Variance':
+            min_var = np.inf
+            min_var_weights = None
 
-    elif strategy == 'Concentrated':
-        sharpe_ratios = annual_returns / annual_volatility
-        top_assets = sharpe_ratios.nlargest(max_assets).index
+            for _ in range(10000):
+                w = np.random.dirichlet(np.ones(n_assets))
+                port_var = w @ cov_matrix.values @ w
 
-        best_sharpe = -np.inf
-        best_weights = None
+                if port_var < min_var:
+                    min_var = port_var
+                    min_var_weights = w
 
-        for _ in range(10000):
-            w = np.zeros(n_assets)
-            top_indices = [returns.columns.get_loc(t) for t in top_assets]
-            w[top_indices] = np.random.dirichlet(np.ones(max_assets))
+            if min_var_weights is None:
+                raise RuntimeError("Min Variance optimization failed to find solution")
+            weights = min_var_weights
 
-            port_return = (w * annual_returns.values).sum()
-            port_vol = np.sqrt(w @ cov_matrix.values @ w)
-            sharpe = port_return / port_vol if port_vol > 0 else 0
+        elif strategy == 'Concentrated':
+            if max_assets is None or max_assets <= 0:
+                raise ValueError("Concentrated strategy requires max_assets > 0")
 
-            if sharpe > best_sharpe:
-                best_sharpe = sharpe
-                best_weights = w
+            sharpe_ratios = annual_returns / (annual_volatility + 1e-10)  # Avoid division by zero
+            top_assets = sharpe_ratios.nlargest(min(max_assets, n_assets)).index
 
-        weights = best_weights
+            best_sharpe = -np.inf
+            best_weights = None
 
-    else:
-        weights = np.ones(n_assets) / n_assets
+            for _ in range(10000):
+                w = np.zeros(n_assets)
+                top_indices = [returns.columns.get_loc(t) for t in top_assets]
+                w[top_indices] = np.random.dirichlet(np.ones(len(top_assets)))
 
-    return pd.Series(weights, index=returns.columns), annual_returns, cov_matrix
+                port_return = (w * annual_returns.values).sum()
+                port_vol = np.sqrt(w @ cov_matrix.values @ w)
+                sharpe = port_return / port_vol if port_vol > 0 else 0
+
+                if sharpe > best_sharpe:
+                    best_sharpe = sharpe
+                    best_weights = w
+
+            if best_weights is None:
+                raise RuntimeError("Concentrated optimization failed to find solution")
+            weights = best_weights
+
+        else:
+            logger.warning(f"Unknown strategy '{strategy}', defaulting to Equal Weight")
+            weights = np.ones(n_assets) / n_assets
+
+        logger.info(f"Optimization successful: strategy={strategy}, n_selected={np.sum(weights > 1e-6)}")
+        return pd.Series(weights, index=returns.columns), annual_returns, cov_matrix
+
+    except Exception as e:
+        logger.error(f"Portfolio optimization failed: {str(e)}")
+        st.error(f"❌ Optimization Error: {str(e)}")
+        # Return equal-weight fallback
+        n_assets = len(returns.columns)
+        fallback_weights = pd.Series(1.0 / n_assets, index=returns.columns)
+        annual_returns = returns.mean() * 252
+        cov_matrix = returns.cov() * 252
+        return fallback_weights, annual_returns, cov_matrix
 
 
 def evaluate_portfolio(
@@ -1020,6 +1131,11 @@ def main() -> None:
         ['Equal Weight', 'Max Sharpe', 'Min Variance', 'Concentrated']
     )
 
+    # Advanced parameters
+    st.sidebar.subheader("Advanced Parameters")
+    risk_aversion = st.sidebar.slider("Risk Aversion", 0.5, 10.0, 2.5, 0.5,
+                                     help="Higher values = more conservative portfolio")
+
     # Strategy-specific parameters
     if strategy == 'Concentrated':
         max_assets = st.sidebar.slider("Max Assets", 3, n_assets, min(5, n_assets))
@@ -1028,26 +1144,46 @@ def main() -> None:
 
     # Generate button
     if st.sidebar.button("🚀 Optimize Portfolio", type="primary"):
-        with st.spinner("Generating data and optimizing..."):
-            # Generate data
-            prices, returns = generate_synthetic_data(n_assets, n_days, seed)
+        try:
+            # Validate inputs
+            if not validate_inputs(n_assets, n_days, int(seed), risk_aversion,
+                                  max_assets if max_assets else n_assets):
+                st.stop()
 
-            # Optimize
-            weights, annual_returns, cov_matrix = optimize_portfolio(
-                returns, strategy, max_assets
-            )
-            metrics = evaluate_portfolio(weights, annual_returns, cov_matrix)
+            with st.spinner("Generating data and optimizing..."):
+                # Generate data
+                try:
+                    prices, returns = generate_synthetic_data(n_assets, n_days, int(seed))
+                except Exception as e:
+                    st.error(f"❌ Data Generation Failed: {str(e)}")
+                    logger.error(f"Data generation error: {str(e)}")
+                    st.stop()
 
-            # Store in session state
-            st.session_state['prices'] = prices
-            st.session_state['returns'] = returns
-            st.session_state['weights'] = weights
-            st.session_state['metrics'] = metrics
-            st.session_state['annual_returns'] = annual_returns
-            st.session_state['cov_matrix'] = cov_matrix
-            st.session_state['strategy'] = strategy
+                # Optimize
+                try:
+                    weights, annual_returns, cov_matrix = optimize_portfolio(
+                        returns, strategy, max_assets, risk_aversion
+                    )
+                    metrics = evaluate_portfolio(weights, annual_returns, cov_matrix)
+                except Exception as e:
+                    st.error(f"❌ Portfolio Optimization Failed: {str(e)}")
+                    logger.error(f"Optimization error: {str(e)}")
+                    st.stop()
 
-        st.sidebar.success("✅ Optimization Complete!")
+                # Store in session state
+                st.session_state['prices'] = prices
+                st.session_state['returns'] = returns
+                st.session_state['weights'] = weights
+                st.session_state['metrics'] = metrics
+                st.session_state['annual_returns'] = annual_returns
+                st.session_state['cov_matrix'] = cov_matrix
+                st.session_state['strategy'] = strategy
+
+            st.sidebar.success("✅ Optimization Complete!")
+
+        except Exception as e:
+            st.sidebar.error(f"❌ Error: {str(e)}")
+            logger.error(f"Unexpected error in optimization workflow: {str(e)}")
 
     # Main content
     if 'weights' in st.session_state:

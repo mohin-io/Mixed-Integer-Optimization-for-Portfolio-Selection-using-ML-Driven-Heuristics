@@ -9,7 +9,13 @@
       "Bash(gh auth:*)",
       "Bash(gh repo create:*)",
       "Bash(git push:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(streamlit run:*)",
+      "Bash(curl:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
