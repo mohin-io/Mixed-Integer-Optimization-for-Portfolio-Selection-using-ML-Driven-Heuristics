@@ -11,7 +11,13 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 import warnings
-from arch import arch_model
+
+try:
+    from arch import arch_model
+    HAS_ARCH = True
+except ImportError:
+    HAS_ARCH = False
+    arch_model = None
 
 warnings.filterwarnings('ignore')
 
