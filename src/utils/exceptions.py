@@ -1,5 +1,5 @@
 """
-Custom Exceptions for Portfolio Optimization
+Custom Exceptions for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Professional error handling with specific exception types.
 """

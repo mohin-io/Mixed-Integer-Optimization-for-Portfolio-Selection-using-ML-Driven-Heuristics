@@ -1,5 +1,5 @@
 # Streamlit Cloud Deployment Guide
-## Mixed-Integer Optimization for Portfolio Selection
+## Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 **Estimated Time:** 5-10 minutes
 **Difficulty:** Beginner
@@ -377,7 +377,7 @@ Use this checklist to verify your deployment:
 
 ## 🎊 Congratulations!
 
-Your **Mixed-Integer Optimization for Portfolio Selection** app is now live on Streamlit Cloud!
+Your **Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics** app is now live on Streamlit Cloud!
 
 ### Share Your Achievement:
 

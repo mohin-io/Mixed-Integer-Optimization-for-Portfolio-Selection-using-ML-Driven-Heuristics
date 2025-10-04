@@ -261,7 +261,7 @@ def create_sharpe_radar(results):
 def main():
     # Header
     st.markdown('<div class="main-header">📊 Interactive Strategy Comparison Dashboard</div>', unsafe_allow_html=True)
-    st.markdown("### Compare Multiple Portfolio Optimization Strategies Side-by-Side")
+    st.markdown("### Compare Multiple Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Strategies Side-by-Side")
 
     # Sidebar
     st.sidebar.header("⚙️ Configuration")

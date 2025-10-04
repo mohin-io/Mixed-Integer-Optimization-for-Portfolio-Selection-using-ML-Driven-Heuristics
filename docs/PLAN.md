@@ -1,4 +1,4 @@
-# Mixed-Integer Optimization for Portfolio Selection
+# Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 ## Practical Portfolio Construction with Transaction Costs and Constraints using ML-Driven Heuristics
 
 **Author:** Mohin Hasin

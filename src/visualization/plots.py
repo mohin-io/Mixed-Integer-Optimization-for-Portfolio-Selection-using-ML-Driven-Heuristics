@@ -1,5 +1,5 @@
 """
-Static Visualization Module for Portfolio Optimization
+Static Visualization Module for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Provides reusable plotting functions for:
 1. Price & Returns - Time series of asset prices and log-returns

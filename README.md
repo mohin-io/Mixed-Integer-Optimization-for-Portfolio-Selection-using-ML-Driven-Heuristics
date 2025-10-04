@@ -1,4 +1,4 @@
-# Mixed-Integer Optimization for Portfolio Selection
+# Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 **Practical Portfolio Construction with Transaction Costs and Constraints using ML-Driven Heuristics**
 
@@ -137,7 +137,7 @@ python scripts/benchmark_performance.py --detailed
 ## 🏗️ Project Architecture
 
 ```
-Mixed-Integer-Optimization-for-Portfolio-Selection/
+Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics/
 │
 ├── src/
 │   ├── data/                  # Data sourcing and preprocessing

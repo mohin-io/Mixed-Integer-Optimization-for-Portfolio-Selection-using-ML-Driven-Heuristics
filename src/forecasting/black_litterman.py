@@ -1,11 +1,11 @@
 """
-Black-Litterman Model for Portfolio Optimization.
+Black-Litterman Model for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics.
 
 Combines market equilibrium returns with investor views to generate
 superior return forecasts.
 
 Reference:
-- Black, F., & Litterman, R. (1992). Global Portfolio Optimization.
+- Black, F., & Litterman, R. (1992). Global Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics.
   Financial Analysts Journal.
 """
 

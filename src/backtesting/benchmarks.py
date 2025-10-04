@@ -1,5 +1,5 @@
 """
-Benchmark Strategies for Portfolio Optimization Comparison
+Benchmark Strategies for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Comparison
 
 Provides reference implementations for:
 1. Equal Weight (1/N)

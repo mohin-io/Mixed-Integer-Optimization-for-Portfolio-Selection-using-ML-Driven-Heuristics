@@ -1,5 +1,5 @@
 """
-CVaR (Conditional Value-at-Risk) Portfolio Optimization.
+CVaR (Conditional Value-at-Risk) Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics.
 
 Implements:
 - CVaR risk measure (Expected Shortfall)

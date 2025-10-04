@@ -1,5 +1,5 @@
 """
-Streamlit Dashboard for Portfolio Optimization
+Streamlit Dashboard for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Interactive web application for exploring portfolio optimization strategies.
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(
-    page_title="Portfolio Optimizer",
+    page_title="Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -1112,7 +1112,7 @@ def create_efficient_frontier_chart(returns: pd.DataFrame, current_portfolio: Di
 # Main app
 def main() -> None:
     # Header with animation
-    st.markdown('<div class="main-header">📊 Portfolio Optimization Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">📊 Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Interactive Mixed-Integer Optimization with Real-Time Visualizations</div>', unsafe_allow_html=True)
 
     # Sidebar
@@ -1166,7 +1166,7 @@ def main() -> None:
                     )
                     metrics = evaluate_portfolio(weights, annual_returns, cov_matrix)
                 except Exception as e:
-                    st.error(f"❌ Portfolio Optimization Failed: {str(e)}")
+                    st.error(f"❌ Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Failed: {str(e)}")
                     logger.error(f"Optimization error: {str(e)}")
                     st.stop()
 

@@ -1,6 +1,6 @@
 # Project Summary
 
-**Project Name:** Mixed-Integer Optimization for Portfolio Selection
+**Project Name:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 **Subtitle:** Practical Portfolio Construction with Transaction Costs and Constraints using ML-Driven Heuristics
 **Author:** Mohin Hasin (mohinhasin999@gmail.com)
 **GitHub:** [@mohin-io](https://github.com/mohin-io)

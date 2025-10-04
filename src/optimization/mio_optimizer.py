@@ -369,7 +369,7 @@ if __name__ == "__main__":
     cov_estimator = CovarianceEstimator(method='ledoit_wolf')
     cov_matrix = cov_estimator.estimate(returns)
 
-    print("=== Portfolio Optimization Comparison ===\n")
+    print("=== Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Comparison ===\n")
 
     # Naive mean-variance
     print("1. Naive Mean-Variance (No Constraints)")

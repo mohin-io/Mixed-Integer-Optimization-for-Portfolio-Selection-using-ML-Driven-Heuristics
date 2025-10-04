@@ -1,6 +1,6 @@
 # 🚀 Final Deployment Status Report
 
-**Project:** Mixed-Integer Optimization for Portfolio Selection
+**Project:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 **Date:** October 4, 2025
 **Status:** ✅ **FULLY DEPLOYED AND LIVE**
 

@@ -1,7 +1,7 @@
 # 🚀 Production-Ready Status Report
 
 **Date:** October 4, 2025
-**Project:** Mixed-Integer Optimization for Portfolio Selection
+**Project:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 **Version:** 2.0.0 (Production-Grade)
 
 ---

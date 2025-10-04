@@ -1,5 +1,5 @@
 """
-FastAPI REST API for Portfolio Optimization
+FastAPI REST API for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Production-ready API with automatic documentation, validation, and error handling.
 
@@ -47,7 +47,7 @@ logger = setup_logger(__name__, log_level=20)  # INFO level
 
 # Create FastAPI app
 app = FastAPI(
-    title="Portfolio Optimization API",
+    title="Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics API",
     description="Mixed-Integer Optimization for Portfolio Selection with ML-Driven Heuristics",
     version="2.0.0",
     docs_url="/docs",
@@ -108,7 +108,7 @@ async def api_error_handler(request, exc: APIError):
 async def root():
     """Root endpoint with API information."""
     return {
-        "name": "Portfolio Optimization API",
+        "name": "Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics API",
         "version": "2.0.0",
         "docs": "/docs",
         "health": "/health"
@@ -363,7 +363,7 @@ def _backtest(
 if __name__ == "__main__":
     import uvicorn
 
-    logger.info("Starting Portfolio Optimization API")
+    logger.info("Starting Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics API")
     uvicorn.run(
         "src.api.main:app",
         host="0.0.0.0",

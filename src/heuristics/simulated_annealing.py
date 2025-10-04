@@ -1,5 +1,5 @@
 """
-Simulated Annealing for Portfolio Optimization
+Simulated Annealing for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Probabilistic optimization technique for escaping local optima:
 1. Start with random solution

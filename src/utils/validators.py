@@ -1,5 +1,5 @@
 """
-Input Validation Functions for Portfolio Optimization
+Input Validation Functions for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Provides comprehensive validation for returns data, weights, and strategy parameters.
 """

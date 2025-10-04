@@ -1,7 +1,7 @@
 # 🚀 Deployment Verification Report
 
 **Date:** October 4, 2025, 10:30 AM
-**Project:** Mixed-Integer Optimization for Portfolio Selection
+**Project:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 **Version:** 2.0.0 (Production-Ready)
 **Status:** ✅ ALL CHANGES COMMITTED, PUSHED & AUTO-DEPLOYING
 

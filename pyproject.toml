@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "portfolio-mio-optimizer"
+name = "mixed-integer-optimization-for-portfolio-selection-using-ml-driven-heuristics"
 version = "1.0.0"
-description = "Mixed-Integer Optimization for Portfolio Selection with ML-Driven Heuristics"
+description = "Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics"
 authors = ["Mohin Hasin <mohinhasin999@gmail.com>"]
 license = "MIT"
 readme = "README.md"

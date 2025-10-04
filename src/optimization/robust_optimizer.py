@@ -1,5 +1,5 @@
 """
-Robust Portfolio Optimization for Worst-Case Scenarios.
+Robust Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics for Worst-Case Scenarios.
 
 Implements:
 - Robust mean-variance optimization

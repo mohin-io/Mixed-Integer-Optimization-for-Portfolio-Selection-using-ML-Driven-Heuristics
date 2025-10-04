@@ -1,5 +1,5 @@
 """
-Main Pipeline for Mixed-Integer Portfolio Optimization
+Main Pipeline for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Demonstrates the complete workflow:
 1. Data loading and preprocessing

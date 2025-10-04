@@ -1,4 +1,4 @@
-"""FastAPI REST API for Portfolio Optimization."""
+"""FastAPI REST API for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics."""
 
 from .main import app
 from .models import (

@@ -2,7 +2,7 @@
 
 **Author:** Mohin Hasin
 **Date:** October 2025
-**Project:** Mixed-Integer Optimization for Portfolio Selection
+**Project:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 ---
 

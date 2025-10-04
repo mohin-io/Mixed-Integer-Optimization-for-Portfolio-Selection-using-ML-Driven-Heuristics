@@ -1,5 +1,5 @@
 """
-Genetic Algorithm for Portfolio Optimization
+Genetic Algorithm for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Evolutionary approach to finding near-optimal portfolios:
 1. Initialize population of random portfolios

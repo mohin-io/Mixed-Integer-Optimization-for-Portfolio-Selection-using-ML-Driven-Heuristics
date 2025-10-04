@@ -1,7 +1,7 @@
 # ✅ Critical Improvements Summary
 
 **Date:** October 4, 2025
-**Project:** Mixed-Integer Optimization for Portfolio Selection
+**Project:** Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 **Evaluation Result:** Upgraded from **4.2/5.0** to **4.8/5.0** (Production-Ready)
 
 ---

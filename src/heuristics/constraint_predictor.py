@@ -1,5 +1,5 @@
 """
-ML-Based Constraint Prediction for Portfolio Optimization
+ML-Based Constraint Prediction for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Predicts which constraints will be active/binding to guide optimization:
 1. Cardinality constraints (which assets to select)

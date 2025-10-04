@@ -11,7 +11,7 @@
 1. **Clone the repository**
 ```bash
 git clone https://github.com/mohin-io/Mixed-Integer-Optimization-for-Portfolio-Selection.git
-cd Mixed-Integer-Optimization-for-Portfolio-Selection
+cd Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 ```
 
 2. **Create virtual environment**

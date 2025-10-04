@@ -1,5 +1,5 @@
 """
-Enhanced Streamlit Dashboard for Portfolio Optimization V2
+Enhanced Streamlit Dashboard for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics V2
 
 Features:
 - Support for both synthetic and real market data
@@ -209,7 +209,7 @@ def evaluate_portfolio(weights, annual_returns, cov_matrix):
 # Main app
 def main():
     # Header
-    st.markdown('<div class="main-header">📊 Portfolio Optimization Dashboard V2</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">📊 Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Dashboard V2</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Mixed-Integer Optimization with Real & Synthetic Data</div>', unsafe_allow_html=True)
 
     # Sidebar

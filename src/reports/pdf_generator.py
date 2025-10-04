@@ -1,5 +1,5 @@
 """
-PDF Report Generator for Portfolio Optimization
+PDF Report Generator for Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 
 Generates professional PDF reports with charts, tables, and analysis.
 """
@@ -158,7 +158,7 @@ class PDFReportGenerator:
 
         # Title
         title = Paragraph(
-            "Portfolio Optimization Report",
+            "Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics Report",
             self.styles['CustomTitle']
         )
         elements.append(Spacer(1, 2*inch))

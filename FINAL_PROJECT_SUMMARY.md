@@ -1,5 +1,5 @@
 # Final Project Summary
-## Mixed-Integer Optimization for Portfolio Selection
+## Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics
 ### Production-Ready Streamlit Dashboard with Comprehensive Testing
 
 **Status:** ✅ **PRODUCTION READY - DEPLOYMENT COMPLETE**

@@ -1,5 +1,5 @@
 """
-Multi-Period Portfolio Optimization with Dynamic Programming.
+Multi-Period Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics with Dynamic Programming.
 
 Implements:
 - Dynamic programming for multi-period optimization
