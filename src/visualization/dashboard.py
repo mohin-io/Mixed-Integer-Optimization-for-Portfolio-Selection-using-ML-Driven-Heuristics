@@ -903,35 +903,63 @@ def create_efficient_frontier_chart(returns: pd.DataFrame, current_portfolio: Di
         y=frontier_data['return'],
         mode='markers',
         marker=dict(
-            size=8,
+            size=6,
             color=frontier_data['sharpe'],
             colorscale='Viridis',
             showscale=True,
-            colorbar=dict(title="Sharpe Ratio"),
-            line=dict(width=1, color='white')
+            colorbar=dict(
+                title=dict(text="Sharpe Ratio", font=dict(size=14)),
+                thickness=15,
+                len=0.7
+            ),
+            line=dict(width=0.5, color='rgba(255,255,255,0.3)'),
+            opacity=0.7
         ),
         text=[f"Sharpe: {s:.2f}" for s in frontier_data['sharpe']],
-        hovertemplate='Return: %{y:.2%}<br>Volatility: %{x:.2%}<br>%{text}<extra></extra>',
-        name='Random Portfolios'
+        hovertemplate='<b>Random Portfolio</b><br>Return: %{y:.2%}<br>Volatility: %{x:.2%}<br>%{text}<extra></extra>',
+        name='Efficient Frontier',
+        showlegend=True
     ))
 
-    # Add current portfolio
+    # Add current portfolio marker (no text)
     fig.add_trace(go.Scatter(
         x=[current_portfolio['volatility']],
         y=[current_portfolio['return']],
-        mode='markers+text',
+        mode='markers',
         marker=dict(
-            size=20,
-            color='red',
+            size=25,
+            color='#FF4444',
             symbol='star',
-            line=dict(width=2, color='white')
+            line=dict(width=3, color='white')
         ),
-        text=['Current'],
-        textposition='top center',
-        textfont=dict(size=14, color='red'),
-        hovertemplate='<b>Current Portfolio</b><br>Return: %{y:.2%}<br>Volatility: %{x:.2%}<extra></extra>',
-        name='Current Portfolio'
+        hovertemplate='<b>Your Current Portfolio</b><br>' +
+                      'Return: %{y:.2%}<br>' +
+                      'Volatility: %{x:.2%}<br>' +
+                      f"Sharpe: {current_portfolio['sharpe']:.3f}" +
+                      '<extra></extra>',
+        name='Current Portfolio',
+        showlegend=True
     ))
+
+    # Add annotation for current portfolio (non-overlapping)
+    fig.add_annotation(
+        x=current_portfolio['volatility'],
+        y=current_portfolio['return'],
+        text="<b>Your Portfolio</b>",
+        showarrow=True,
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor='#FF4444',
+        ax=60,
+        ay=-40,
+        bgcolor='rgba(255, 255, 255, 0.9)',
+        bordercolor='#FF4444',
+        borderwidth=2,
+        borderpad=4,
+        font=dict(size=12, color='#FF4444', family='Arial Black'),
+        opacity=1
+    )
 
     fig.update_layout(
         title=dict(
@@ -940,12 +968,31 @@ def create_efficient_frontier_chart(returns: pd.DataFrame, current_portfolio: Di
             x=0.5,
             xanchor='center'
         ),
-        xaxis=dict(title='Annual Volatility (%)', gridcolor='rgba(200,200,200,0.3)', tickformat='.1%'),
-        yaxis=dict(title='Expected Annual Return (%)', gridcolor='rgba(200,200,200,0.3)', tickformat='.1%'),
+        xaxis=dict(
+            title='Annual Volatility (%)',
+            gridcolor='rgba(200,200,200,0.3)',
+            tickformat='.1%',
+            showgrid=True
+        ),
+        yaxis=dict(
+            title='Expected Annual Return (%)',
+            gridcolor='rgba(200,200,200,0.3)',
+            tickformat='.1%',
+            showgrid=True
+        ),
         hovermode='closest',
-        height=600,
+        height=650,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(250,250,250,0.9)',
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor='rgba(0,0,0,0.2)',
+            borderwidth=1
+        )
     )
 
     return fig
