@@ -31,6 +31,12 @@ class OptimizationConfig:
     solver: str = 'PULP_CBC_CMD'  # Solver to use
     time_limit: int = 300  # Solver time limit in seconds
 
+    # Short-selling and leverage parameters
+    allow_short_selling: bool = False  # Allow negative weights
+    max_short_weight: float = 0.20  # Maximum short position per asset
+    max_leverage: float = 1.0  # Maximum gross exposure (1.0 = no leverage)
+    net_exposure: float = 1.0  # Required net exposure (long - short)
+
 
 class MIOOptimizer:
     """
@@ -85,11 +91,21 @@ class MIOOptimizer:
         self.problem = pl.LpProblem("Portfolio_MIO", pl.LpMaximize)
 
         # Decision variables
-        # w[i] = weight of asset i (continuous, but will be discretized)
-        w = pl.LpVariable.dicts("weight", assets, lowBound=0, upBound=self.config.max_weight)
+        if self.config.allow_short_selling:
+            # Allow both long and short positions
+            w_long = pl.LpVariable.dicts("w_long", assets, lowBound=0, upBound=self.config.max_weight)
+            w_short = pl.LpVariable.dicts("w_short", assets, lowBound=0, upBound=self.config.max_short_weight)
 
-        # y[i] = binary indicator (1 if asset i is in portfolio)
-        y = pl.LpVariable.dicts("indicator", assets, cat='Binary')
+            # Net weight = long - short
+            w = {i: w_long[i] - w_short[i] for i in assets}
+
+            # Binary indicators for long and short positions
+            y_long = pl.LpVariable.dicts("y_long", assets, cat='Binary')
+            y_short = pl.LpVariable.dicts("y_short", assets, cat='Binary')
+        else:
+            # Long-only portfolio
+            w = pl.LpVariable.dicts("weight", assets, lowBound=0, upBound=self.config.max_weight)
+            y = pl.LpVariable.dicts("indicator", assets, cat='Binary')
 
         # Auxiliary variable for quadratic risk (using piecewise linearization)
         # For simplicity, we'll use a linearization approach
@@ -129,20 +145,57 @@ class MIOOptimizer:
         self.problem += objective
 
         # Constraints
+        if self.config.allow_short_selling:
+            # Short-selling enabled constraints
 
-        # 1. Budget constraint: sum of weights = 1
-        self.problem += pl.lpSum([w[i] for i in assets]) == 1, "Budget"
+            # 1. Net exposure constraint: sum(long) - sum(short) = net_exposure
+            self.problem += (
+                pl.lpSum([w_long[i] for i in assets]) - pl.lpSum([w_short[i] for i in assets])
+                == self.config.net_exposure
+            ), "Net_Exposure"
 
-        # 2. Indicator constraints: w[i] > 0 => y[i] = 1
-        for i in assets:
-            # w[i] <= y[i] (if y[i]=0, then w[i]=0)
-            self.problem += w[i] <= self.config.max_weight * y[i], f"Upper_{i}"
-            # w[i] >= min_weight * y[i] (if invested, invest at least min_weight)
-            self.problem += w[i] >= self.config.min_weight * y[i], f"Lower_{i}"
+            # 2. Gross exposure constraint: sum(long) + sum(short) <= max_leverage
+            self.problem += (
+                pl.lpSum([w_long[i] for i in assets]) + pl.lpSum([w_short[i] for i in assets])
+                <= self.config.max_leverage
+            ), "Gross_Exposure"
 
-        # 3. Cardinality constraint: limit number of assets
-        if self.config.max_assets is not None:
-            self.problem += pl.lpSum([y[i] for i in assets]) <= self.config.max_assets, "Cardinality"
+            # 3. Indicator constraints for long positions
+            for i in assets:
+                self.problem += w_long[i] <= self.config.max_weight * y_long[i], f"Long_Upper_{i}"
+                self.problem += w_long[i] >= self.config.min_weight * y_long[i], f"Long_Lower_{i}"
+
+            # 4. Indicator constraints for short positions
+            for i in assets:
+                self.problem += w_short[i] <= self.config.max_short_weight * y_short[i], f"Short_Upper_{i}"
+
+            # 5. Cannot be both long and short in the same asset
+            for i in assets:
+                self.problem += y_long[i] + y_short[i] <= 1, f"No_Both_{i}"
+
+            # 6. Cardinality constraint (total long + short positions)
+            if self.config.max_assets is not None:
+                self.problem += (
+                    pl.lpSum([y_long[i] for i in assets]) + pl.lpSum([y_short[i] for i in assets])
+                    <= self.config.max_assets
+                ), "Cardinality"
+
+        else:
+            # Long-only constraints
+
+            # 1. Budget constraint: sum of weights = 1
+            self.problem += pl.lpSum([w[i] for i in assets]) == 1, "Budget"
+
+            # 2. Indicator constraints: w[i] > 0 => y[i] = 1
+            for i in assets:
+                # w[i] <= y[i] (if y[i]=0, then w[i]=0)
+                self.problem += w[i] <= self.config.max_weight * y[i], f"Upper_{i}"
+                # w[i] >= min_weight * y[i] (if invested, invest at least min_weight)
+                self.problem += w[i] >= self.config.min_weight * y[i], f"Lower_{i}"
+
+            # 3. Cardinality constraint: limit number of assets
+            if self.config.max_assets is not None:
+                self.problem += pl.lpSum([y[i] for i in assets]) <= self.config.max_assets, "Cardinality"
 
         # Solve
         start_time = time.time()
@@ -159,19 +212,43 @@ class MIOOptimizer:
 
         # Extract solution
         if self.problem.status == pl.LpStatusOptimal:
-            weights = pd.Series({i: w[i].varValue for i in assets})
-            weights = weights.fillna(0)
+            if self.config.allow_short_selling:
+                # Extract long and short weights separately
+                weights = pd.Series({i: w_long[i].varValue - w_short[i].varValue for i in assets})
+                long_weights = pd.Series({i: w_long[i].varValue for i in assets})
+                short_weights = pd.Series({i: w_short[i].varValue for i in assets})
 
-            # Normalize to ensure sum = 1 (numerical precision)
-            weights = weights / weights.sum()
+                gross_exposure = long_weights.sum() + short_weights.sum()
+                net_exposure = long_weights.sum() - short_weights.sum()
 
-            self.solution = {
-                'weights': weights,
-                'objective_value': pl.value(self.problem.objective),
-                'solve_time': solve_time,
-                'status': 'optimal',
-                'n_assets': int(sum(weights > 1e-6))
-            }
+                self.solution = {
+                    'weights': weights,
+                    'long_weights': long_weights,
+                    'short_weights': short_weights,
+                    'gross_exposure': gross_exposure,
+                    'net_exposure': net_exposure,
+                    'objective_value': pl.value(self.problem.objective),
+                    'solve_time': solve_time,
+                    'status': 'optimal',
+                    'n_assets': int(sum(abs(weights) > 1e-6)),
+                    'n_long': int(sum(long_weights > 1e-6)),
+                    'n_short': int(sum(short_weights > 1e-6))
+                }
+            else:
+                # Long-only solution
+                weights = pd.Series({i: w[i].varValue for i in assets})
+                weights = weights.fillna(0)
+
+                # Normalize to ensure sum = 1 (numerical precision)
+                weights = weights / weights.sum()
+
+                self.solution = {
+                    'weights': weights,
+                    'objective_value': pl.value(self.problem.objective),
+                    'solve_time': solve_time,
+                    'status': 'optimal',
+                    'n_assets': int(sum(weights > 1e-6))
+                }
 
             return weights
 

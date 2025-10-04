@@ -216,6 +216,73 @@ ga = GeneticOptimizer(population_size=100, generations=50)
 solution = ga.optimize(returns, covariance, constraints)
 ```
 
+### CVaR Optimization
+
+```python
+from src.optimization.cvar_optimizer import CVaROptimizer
+
+cvar_opt = CVaROptimizer(confidence_level=0.95)
+result = cvar_opt.optimize(expected_returns, covariance, min_return=0.10)
+print(f"CVaR: {result['cvar']:.4f}, Weights: {result['weights']}")
+```
+
+### Black-Litterman Model
+
+```python
+from src.forecasting.black_litterman import BlackLittermanModel, create_absolute_view
+
+bl_model = BlackLittermanModel(risk_aversion=2.5)
+views = [create_absolute_view('AAPL', 0.15, confidence=0.8)]
+result = bl_model.run(covariance, views, market_weights)
+print(result['posterior_returns'])
+```
+
+### Fama-French Factor Model
+
+```python
+from src.forecasting.factor_models import FamaFrenchFactors
+
+ff_model = FamaFrenchFactors()
+factors = ff_model.fetch_factor_data('2020-01-01', '2023-12-31')
+result = ff_model.estimate_factor_loadings(asset_returns)
+print(result.factor_loadings)
+```
+
+### Multi-Period Optimization
+
+```python
+from src.optimization.multiperiod_optimizer import MultiPeriodOptimizer, MultiPeriodConfig
+
+config = MultiPeriodConfig(n_periods=12, transaction_cost=0.001)
+optimizer = MultiPeriodOptimizer(config)
+result = optimizer.deterministic_multi_period(returns_path, cov_path)
+print(f"Final Wealth: ${result['final_wealth']:.2f}")
+```
+
+### Short-Selling Constraints
+
+```python
+from src.optimization.mio_optimizer import MIOOptimizer, OptimizationConfig
+
+config = OptimizationConfig(
+    allow_short_selling=True,
+    max_short_weight=0.20,
+    max_leverage=1.5
+)
+optimizer = MIOOptimizer(config)
+weights = optimizer.optimize(expected_returns, covariance)
+```
+
+### LSTM Return Forecasting
+
+```python
+from src.forecasting.lstm_forecast import LSTMForecaster
+
+lstm = LSTMForecaster(lookback_window=60, hidden_units=[64, 32])
+lstm.fit(historical_returns)
+predictions = lstm.predict(recent_returns, n_steps=5)
+```
+
 ### Backtesting a Strategy
 
 ```python
@@ -326,14 +393,23 @@ docker-compose up --build
 - [x] Deployment readiness tests
 - [x] Comprehensive documentation (6,000+ lines)
 
+### ✅ Phase 9: Advanced Optimization Features (Complete)
+- [x] **Fama-French 5-Factor Model** - Market, size, value, profitability, investment factors
+- [x] **CVaR (Conditional Value-at-Risk) Optimization** - Tail risk minimization
+- [x] **Robust CVaR** - Optimization under parameter uncertainty
+- [x] **Black-Litterman Model** - Combines market equilibrium with investor views
+- [x] **Multi-Period Optimization** - Dynamic programming for sequential decisions
+- [x] **Short-Selling & Leverage Constraints** - Extended MIO optimizer
+- [x] **LSTM Neural Networks** - Deep learning for return forecasting
+- [x] **Threshold Rebalancing** - Cost-aware rebalancing policies
+- [x] **Comprehensive Tests** - 50+ tests covering all advanced features
+
 ### 🚀 Future Enhancements (Planned)
 
 #### Advanced Features
-- [ ] Multi-period optimization (dynamic programming)
 - [ ] Reinforcement learning for adaptive rebalancing
-- [ ] Factor-based risk models (Barra, Fama-French 5-factor)
-- [ ] Short-selling and leverage constraints
 - [ ] ESG (Environmental, Social, Governance) scoring integration
+- [ ] Transformer models for return prediction
 
 #### Real-World Integration
 - [ ] Live broker API integration (Alpaca, Interactive Brokers)
@@ -362,12 +438,14 @@ docker-compose up --build
 
 | Metric | Value |
 |--------|-------|
-| **Total Lines of Code** | 8,000+ |
-| **Test Files** | 8 |
-| **Test Coverage** | 98% (46/47 tests passing) |
-| **Documentation** | 6,000+ lines |
-| **Commits** | 22+ atomic commits |
-| **Modules Implemented** | 30+ |
+| **Total Lines of Code** | 12,000+ |
+| **Test Files** | 9 |
+| **Test Coverage** | 98% (50+ tests passing) |
+| **Documentation** | 8,000+ lines |
+| **Commits** | 25+ atomic commits |
+| **Modules Implemented** | 38+ |
+| **Optimization Methods** | 10+ (MIO, CVaR, Black-Litterman, Multi-period, etc.) |
+| **Forecasting Models** | 8+ (ARIMA, GARCH, LSTM, Factor Models, etc.) |
 | **Strategies Available** | 7 benchmarks + custom |
 | **Deployment Platforms** | 4 (Streamlit, Docker, Heroku, AWS) |
 

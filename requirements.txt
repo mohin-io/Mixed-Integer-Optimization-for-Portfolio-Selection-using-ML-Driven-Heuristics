@@ -21,6 +21,10 @@ statsmodels>=0.14.0
 arch>=6.2.0
 # pmdarima>=2.0.3  # Removed: incompatible with Python 3.13, use statsmodels ARIMA instead
 
+# Deep Learning (Optional - for LSTM forecasting)
+tensorflow>=2.13.0  # Optional: pip install tensorflow for LSTM models
+# torch>=2.0.0  # Alternative: PyTorch for neural networks
+
 # Visualization
 matplotlib>=3.7.0
 seaborn>=0.12.0
