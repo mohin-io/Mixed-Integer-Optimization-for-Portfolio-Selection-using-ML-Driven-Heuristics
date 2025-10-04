@@ -61,3 +61,6 @@ python-dateutil>=2.8.2
 # Live Trading & Real-Time Data (Optional)
 alpaca-trade-api>=3.0.0  # Optional: for broker integration
 websockets>=11.0.0  # Optional: for real-time data streams
+
+# Production Monitoring (Optional)
+prometheus-client>=0.17.0  # Optional: for production metrics
