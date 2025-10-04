@@ -19,7 +19,7 @@ xgboost>=2.0.0
 # Time Series & Forecasting
 statsmodels>=0.14.0
 arch>=6.2.0
-pmdarima>=2.0.3
+# pmdarima>=2.0.3  # Removed: incompatible with Python 3.13, use statsmodels ARIMA instead
 
 # Visualization
 matplotlib>=3.7.0
