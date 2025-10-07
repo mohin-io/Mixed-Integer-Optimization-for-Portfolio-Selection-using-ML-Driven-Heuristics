@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
+from io import StringIO
 import time
 import logging
 from typing import Tuple, Optional, Dict, Any, List
@@ -87,6 +88,131 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+# Default configuration and guided presets for the dashboard experience
+DEFAULT_UI_CONFIG: Dict[str, Any] = {
+    'preset_choice': 'Quick Demo (Balanced)',
+    'n_assets': 10,
+    'n_days': 1000,
+    'seed': 42,
+    'strategy': 'Max Sharpe',
+    'risk_aversion': 2.5,
+    'max_assets': 5,
+}
+
+PRESET_SCENARIOS: Dict[str, Dict[str, Any]] = {
+    'Quick Demo (Balanced)': {
+        'config': {
+            'n_assets': 10,
+            'n_days': 750,
+            'seed': 21,
+            'strategy': 'Max Sharpe',
+            'risk_aversion': 2.5,
+            'max_assets': 5,
+        },
+        'description': 'Optimized for a fast, visually rich walkthrough with balanced risk/return.',
+    },
+    'Capital Preservation': {
+        'config': {
+            'n_assets': 8,
+            'n_days': 1500,
+            'seed': 11,
+            'strategy': 'Min Variance',
+            'risk_aversion': 4.0,
+            'max_assets': 4,
+        },
+        'description': 'Focus on downside protection and smoother volatility profile.',
+    },
+    'Aggressive Growth': {
+        'config': {
+            'n_assets': 15,
+            'n_days': 1250,
+            'seed': 7,
+            'strategy': 'Concentrated',
+            'risk_aversion': 1.2,
+            'max_assets': 6,
+        },
+        'description': 'High-conviction play with more assets explored but a concentrated allocation.',
+    },
+    'Custom': {
+        'config': {},
+        'description': 'Take full control and fine-tune every parameter yourself.',
+    },
+}
+
+
+def ensure_session_state_defaults() -> None:
+    """Seed Streamlit session state with sensible defaults for first-time visitors."""
+    for key, value in DEFAULT_UI_CONFIG.items():
+        st.session_state.setdefault(key, value)
+    st.session_state.setdefault('active_preset', DEFAULT_UI_CONFIG['preset_choice'])
+
+
+def apply_preset_settings(preset_name: str) -> None:
+    """Apply preset configuration to session state without overriding custom choices unnecessarily."""
+    preset = PRESET_SCENARIOS.get(preset_name, PRESET_SCENARIOS['Custom'])
+    config = preset.get('config', {})
+
+    for key, value in config.items():
+        # Only update if preset explicitly specifies the value
+        st.session_state[key] = value
+
+    st.session_state['active_preset'] = preset_name
+
+
+def render_portfolio_summary(metrics: Dict[str, Any], strategy: str) -> None:
+    """Render user-friendly insights that highlight what the numbers mean."""
+    takeaways: List[str] = []
+
+    annual_return = metrics.get('return', 0.0)
+    volatility = metrics.get('volatility', 0.0)
+    sharpe = metrics.get('sharpe', 0.0)
+    n_assets = metrics.get('n_assets', 0)
+
+    if sharpe >= 2.0:
+        takeaways.append("🚀 Risk-adjusted performance is strong (Sharpe ≥ 2).")
+    elif sharpe >= 1.0:
+        takeaways.append("👍 Solid Sharpe ratio – the risk/return trade-off looks healthy.")
+    else:
+        takeaways.append("⚠️ Sharpe ratio is modest; consider adjusting risk aversion or strategy.")
+
+    if annual_return >= 0.15:
+        takeaways.append("💡 Expected return is notably high; ensure this aligns with your risk tolerance.")
+    elif annual_return <= 0.05:
+        takeaways.append("🔍 Expected return is conservative – great for capital preservation scenarios.")
+    else:
+        takeaways.append("📈 Return outlook is balanced for growth-oriented profiles.")
+
+    if volatility >= 0.25:
+        takeaways.append("🌊 Volatility is elevated; keep an eye on drawdowns and diversification.")
+    elif volatility <= 0.1:
+        takeaways.append("🛡️ Portfolio volatility is nicely contained, aiding smoother equity curves.")
+
+    if strategy == 'Concentrated' and n_assets <= 5:
+        takeaways.append("🎯 Strategy is laser-focused – rebalance discipline becomes critical.")
+    elif n_assets >= 8:
+        takeaways.append("🧺 Diversification spreads risk across multiple names.")
+
+    st.markdown("#### Key Takeaways")
+    for point in takeaways[:4]:  # Keep the list succinct for readability
+        st.markdown(f"- {point}")
+
+
+def prepare_weights_export(weights: pd.Series, annual_returns: pd.Series, annual_vol: pd.Series) -> bytes:
+    """Create a downloadable CSV snapshot for the current allocation."""
+    active_weights = weights[weights > 1e-4].sort_values(ascending=False)
+    export_df = pd.DataFrame({
+        'Asset': active_weights.index,
+        'Weight': active_weights.values,
+        'Weight (%)': (active_weights.values * 100).round(2),
+        'Expected Return': annual_returns[active_weights.index].values,
+        'Volatility': annual_vol[active_weights.index].values,
+    })
+
+    buffer = StringIO()
+    export_df.to_csv(buffer, index=False)
+    return buffer.getvalue().encode('utf-8')
 
 
 def validate_inputs(n_assets: int, n_days: int, seed: int, risk_aversion: float, max_assets: int) -> bool:
@@ -1115,39 +1241,108 @@ def main() -> None:
     st.markdown('<div class="main-header">📊 Mixed-Integer-Optimization-for-Portfolio-Selection-using-ML-Driven-Heuristics</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Interactive Mixed-Integer Optimization with Real-Time Visualizations</div>', unsafe_allow_html=True)
 
-    # Sidebar
-    st.sidebar.header("⚙️ Configuration")
+    # Sidebar configuration experience
+    ensure_session_state_defaults()
 
-    # Data parameters
-    st.sidebar.subheader("Data Parameters")
-    n_assets = st.sidebar.slider("Number of Assets", 5, 20, 10)
-    n_days = st.sidebar.slider("Number of Days", 250, 2000, 1000, step=250)
-    seed = st.sidebar.number_input("Random Seed", 1, 1000, 42)
+    st.sidebar.header("⚙️ Configuration Studio")
+    st.sidebar.caption("Pick a preset to get started fast, then fine-tune the sliders below.")
 
-    # Strategy selection
-    st.sidebar.subheader("Optimization Strategy")
-    strategy = st.sidebar.selectbox(
-        "Select Strategy",
-        ['Equal Weight', 'Max Sharpe', 'Min Variance', 'Concentrated']
-    )
+    with st.sidebar.form("config_form", clear_on_submit=False):
+        preset_options = list(PRESET_SCENARIOS.keys())
+        active_preset = st.session_state.get('active_preset', DEFAULT_UI_CONFIG['preset_choice'])
+        if active_preset not in preset_options:
+            active_preset = preset_options[0]
+        preset_index = preset_options.index(active_preset)
 
-    # Advanced parameters
-    st.sidebar.subheader("Advanced Parameters")
-    risk_aversion = st.sidebar.slider("Risk Aversion", 0.5, 10.0, 2.5, 0.5,
-                                     help="Higher values = more conservative portfolio")
+        preset_choice = st.selectbox(
+            "Preset Scenario",
+            preset_options,
+            index=preset_index,
+            key='preset_choice'
+        )
+        st.caption(PRESET_SCENARIOS[preset_choice]['description'])
 
-    # Strategy-specific parameters
-    if strategy == 'Concentrated':
-        max_assets = st.sidebar.slider("Max Assets", 3, n_assets, min(5, n_assets))
-    else:
-        max_assets = None
+        if preset_choice != 'Custom' and st.session_state.get('active_preset') != preset_choice:
+            apply_preset_settings(preset_choice)
+        elif preset_choice == 'Custom':
+            st.session_state['active_preset'] = 'Custom'
 
-    # Generate button
-    if st.sidebar.button("🚀 Optimize Portfolio", type="primary"):
+        st.markdown("### Data Parameters")
+        n_assets = st.slider(
+            "Number of Assets",
+            5,
+            20,
+            value=int(st.session_state.get('n_assets', DEFAULT_UI_CONFIG['n_assets'])),
+            key='n_assets'
+        )
+        n_days = st.slider(
+            "Number of Days",
+            250,
+            2000,
+            value=int(st.session_state.get('n_days', DEFAULT_UI_CONFIG['n_days'])),
+            step=250,
+            key='n_days'
+        )
+        seed = st.number_input(
+            "Random Seed",
+            1,
+            1000,
+            value=int(st.session_state.get('seed', DEFAULT_UI_CONFIG['seed'])),
+            step=1,
+            key='seed'
+        )
+
+        st.markdown("### Optimization Strategy")
+        strategies = ['Equal Weight', 'Max Sharpe', 'Min Variance', 'Concentrated']
+        strategy_default = st.session_state.get('strategy', DEFAULT_UI_CONFIG['strategy'])
+        if strategy_default not in strategies:
+            strategy_default = strategies[0]
+        strategy = st.selectbox(
+            "Select Strategy",
+            strategies,
+            index=strategies.index(strategy_default),
+            key='strategy'
+        )
+
+        with st.expander("Advanced Parameters", expanded=False):
+            risk_aversion = st.slider(
+                "Risk Aversion",
+                0.5,
+                10.0,
+                value=float(st.session_state.get('risk_aversion', DEFAULT_UI_CONFIG['risk_aversion'])),
+                step=0.5,
+                help="Higher values tilt the optimizer toward lower-volatility allocations.",
+                key='risk_aversion'
+            )
+
+            if strategy == 'Concentrated':
+                max_assets_default = min(
+                    int(st.session_state.get('max_assets', DEFAULT_UI_CONFIG['max_assets'])),
+                    n_assets
+                )
+                max_assets = st.slider(
+                    "Max Assets",
+                    3,
+                    n_assets,
+                    value=max_assets_default,
+                    key='max_assets',
+                    help="Upper bound on the number of holdings the optimizer may select."
+                )
+            else:
+                max_assets = min(
+                    int(st.session_state.get('max_assets', DEFAULT_UI_CONFIG['max_assets'])),
+                    n_assets
+                )
+
+        optimize_clicked = st.form_submit_button("🚀 Optimize Portfolio", type="primary")
+
+    st.sidebar.info("Need inspiration? Presets load curated defaults while keeping everything tweakable.")
+
+    if optimize_clicked:
         try:
             # Validate inputs
-            if not validate_inputs(n_assets, n_days, int(seed), risk_aversion,
-                                  max_assets if max_assets else n_assets):
+            validation_max_assets = max_assets if strategy == 'Concentrated' else n_assets
+            if not validate_inputs(n_assets, n_days, int(seed), risk_aversion, validation_max_assets):
                 st.stop()
 
             with st.spinner("Generating data and optimizing..."):
@@ -1162,7 +1357,7 @@ def main() -> None:
                 # Optimize
                 try:
                     weights, annual_returns, cov_matrix = optimize_portfolio(
-                        returns, strategy, max_assets, risk_aversion
+                        returns, strategy, max_assets if strategy == 'Concentrated' else None, risk_aversion
                     )
                     metrics = evaluate_portfolio(weights, annual_returns, cov_matrix)
                 except Exception as e:
@@ -1194,6 +1389,7 @@ def main() -> None:
         annual_returns = st.session_state['annual_returns']
         cov_matrix = st.session_state['cov_matrix']
         strategy = st.session_state.get('strategy', 'Unknown')
+        annual_vol = returns.std() * np.sqrt(252)
 
         # Metrics with gauges
         st.header("📈 Portfolio Metrics Dashboard")
@@ -1215,6 +1411,18 @@ def main() -> None:
         with col4:
             fig4 = create_gauge_chart(metrics['n_assets'], "Active Assets", n_assets)
             st.plotly_chart(fig4, use_container_width=True)
+
+        st.markdown("### Strategy Snapshot")
+        st.markdown(
+            f"**Selected Strategy:** `{strategy}` · **Preset:** `{st.session_state.get('active_preset', 'Custom')}`"
+        )
+        render_portfolio_summary(metrics, strategy)
+        st.caption(
+            "Configuration: "
+            f"{st.session_state.get('n_assets', n_assets)} assets · "
+            f"{st.session_state.get('n_days', n_days)} days · "
+            f"Seed {st.session_state.get('seed', seed)}"
+        )
 
         # Tabs with enhanced visualizations
         tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
@@ -1238,7 +1446,6 @@ def main() -> None:
                 st.plotly_chart(fig_weights, use_container_width=True)
 
             with col2:
-                annual_vol = returns.std() * np.sqrt(252)
                 fig_treemap = create_portfolio_treemap(weights, annual_returns)
                 st.plotly_chart(fig_treemap, use_container_width=True)
 
@@ -1258,6 +1465,13 @@ def main() -> None:
                 'Volatility': annual_vol[active_weights.index].values
             })
             st.dataframe(weights_df, use_container_width=True, hide_index=True)
+
+            st.download_button(
+                "⬇️ Download Allocation (CSV)",
+                data=prepare_weights_export(weights, annual_returns, annual_vol),
+                file_name="portfolio_allocation.csv",
+                mime="text/csv"
+            )
 
         with tab2:
             st.subheader("Efficient Frontier Explorer")
